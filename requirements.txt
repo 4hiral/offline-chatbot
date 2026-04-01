@@ -1,0 +1,13 @@
+flask
+pdfplumber
+pdf2image
+opencv-python
+Pillow
+numpy
+pandas
+openpyxl
+python-docx
+easyocr
+faiss-cpu
+sentence-transformers
+openai

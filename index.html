@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Offline Chatbot</title>
+
+<style>
+:root {
+    --bg: #ffffff;
+    --text: #111827;
+    --muted: #6b7280;
+    --muted-2: #4b5563;
+    --border: #e5e7eb;
+    --border-strong: #cfd4dd;
+    --primary: #0f5bd8;
+    --primary-hover: #0b49ac;
+    --success: #14803c;
+    --surface: #ffffff;
+    --soft: #f8fafc;
+    --shadow-sm: 0 4px 16px rgba(17, 24, 39, 0.05);
+    --shadow-md: 0 14px 30px rgba(17, 24, 39, 0.08);
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", "Helvetica Neue", "Noto Sans", sans-serif;
+    line-height: 1.45;
+}
+
+.page {
+    width: min(1040px, 94vw);
+    margin: 30px auto;
+    animation: fadeUp 260ms ease;
+}
+
+.app-shell {
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--surface);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+}
+
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 20px 22px;
+    border-bottom: 1px solid var(--border);
+    background: #fff;
+}
+
+.brand { min-width: 0; }
+
+h1 {
+    margin: 0;
+    font-size: clamp(1.35rem, 1.15rem + 1vw, 1.9rem);
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
+.subtitle {
+    margin-top: 4px;
+    font-size: 0.94rem;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    color: var(--muted-2);
+    background: #fff;
+}
+
+.main { padding: 20px; display: grid; gap: 16px; }
+
+.panel {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: var(--shadow-sm);
+    padding: 16px;
+}
+
+.panel-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.section-title {
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted-2);
+}
+
+.hint { margin: 0; font-size: 0.84rem; color: var(--muted); }
+
+.upload-grid {
+    display: grid;
+    grid-template-columns: minmax(240px, 1.5fr) auto;
+    gap: 10px;
+    align-items: center;
+}
+
+input[type="file"] {
+    width: 100%;
+    border: 1px dashed var(--border-strong);
+    border-radius: 10px;
+    padding: 9px;
+    font-size: 0.9rem;
+    background: #fff;
+}
+
+select, input[type="text"] {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 12px;
+    font-size: 0.95rem;
+    background: #fff;
+    color: var(--text);
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+input[type="text"]:focus, select:focus, button:focus {
+    outline: none;
+    border-color: rgba(15, 91, 216, 0.42);
+    box-shadow: 0 0 0 3px rgba(15, 91, 216, 0.14);
+}
+
+button {
+    border: 1px solid transparent;
+    border-radius: 10px;
+    padding: 11px 16px;
+    background: var(--primary);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition: background-color 180ms ease, transform 120ms ease;
+    white-space: nowrap;
+}
+
+button:hover  { background: var(--primary-hover); }
+button:active { transform: translateY(1px); }
+button:disabled { background: #9bb5e6; color: #f6f9ff; cursor: not-allowed; }
+
+.status-row { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+
+.status {
+    font-size: 0.83rem;
+    color: #374151;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 10px;
+    background: #fff;
+}
+
+.chat-box {
+    height: 430px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    background: #fff;
+}
+
+.message {
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(17, 24, 39, 0.04);
+    max-width: 96%;
+}
+
+.message strong { margin-right: 6px; }
+.user { border-left: 4px solid var(--primary); }
+.bot  { border-left: 4px solid var(--success); }
+
+.controls {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 10px;
+}
+
+.table-render {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 0.86rem;
+}
+
+.table-render th, .table-render td {
+    border: 1px solid #d3d8e0;
+    padding: 7px 8px;
+    text-align: left;
+    vertical-align: top;
+}
+
+.table-render thead { background: var(--soft); }
+
+.footer {
+    margin-top: 2px;
+    border-top: 1px solid var(--border);
+    padding: 12px 20px 16px;
+    color: var(--muted);
+    font-size: 0.82rem;
+    text-align: center;
+}
+
+@media (max-width: 900px) {
+    .topbar { flex-direction: column; align-items: flex-start; }
+    .upload-grid { grid-template-columns: 1fr; }
+    .controls { grid-template-columns: 1fr; }
+    .chat-box { height: 360px; }
+}
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+
+<body>
+<div class="page">
+  <div class="app-shell">
+
+    <header class="topbar">
+      <div class="brand">
+        <h1>Offline Chatbot</h1>
+        <div class="subtitle">Local AI &middot; No Internet &middot; Secure Documents</div>
+      </div>
+      <span class="badge">Private Mode</span>
+    </header>
+
+    <main class="main">
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2 class="section-title">Document Upload</h2>
+          <p class="hint">Upload files, then ask questions from them.</p>
+        </div>
+        <div class="upload-grid">
+          <input type="file" id="files"
+                 accept=".pdf,.docx,.png,.jpg,.jpeg" multiple>
+          <button id="uploadBtn" onclick="uploadDocs()">Upload Documents</button>
+        </div>
+        <div class="status-row">
+          <span id="fileLabel"    class="status">No files selected</span>
+          <span id="uploadStatus" class="status"></span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2 class="section-title">Chat Workspace</h2>
+          <p class="hint">Use Send for Q&amp;A or Extract Tables for tabular data.</p>
+        </div>
+        <div id="chatBox" class="chat-box"></div>
+        <div class="controls">
+          <input type="text" id="message"
+                 placeholder="Ask a question from the documents...">
+          <button id="sendBtn"  onclick="sendMessage()"   disabled>Send</button>
+          <button id="tableBtn" onclick="extractTables()" disabled>Extract Tables</button>
+        </div>
+      </section>
+
+    </main>
+
+    <div class="footer">
+      Powered by meta-llama-3-8b-instruct &middot; Fully Offline
+    </div>
+
+  </div>
+</div>
+
+<script>
+const chatBox      = document.getElementById("chatBox");
+const fileLabel    = document.getElementById("fileLabel");
+const uploadStatus = document.getElementById("uploadStatus");
+const sendBtn      = document.getElementById("sendBtn");
+const tableBtn     = document.getElementById("tableBtn");
+const fileInput    = document.getElementById("files");
+
+function setReady(v) { sendBtn.disabled = !v; tableBtn.disabled = !v; }
+function setStatus(t) { uploadStatus.textContent = t || ""; }
+
+fileInput.addEventListener("change", () => {
+    const files = Array.from(fileInput.files || []);
+    fileLabel.textContent = files.length
+        ? files.map(f => f.name).join(", ")
+        : "No files selected";
+});
+
+function escapeHtml(s) {
+    return String(s)
+        .replaceAll("&","&amp;").replaceAll("<","&lt;")
+        .replaceAll(">","&gt;");
+}
+
+/* ── Markdown table → HTML table ── */
+function parseMarkdownTable(text) {
+    if (!text.includes("|")) return null;
+    const lines = text.split("\n");
+    const sepRx = /^\s*\|?[-\s:|]+\|?\s*$/;
+    let sepIdx  = lines.findIndex(l => sepRx.test(l));
+    if (sepIdx < 1) return null;
+    let hdrIdx  = -1;
+    for (let i = sepIdx - 1; i >= 0; i--) {
+        if (lines[i].includes("|")) { hdrIdx = i; break; }
+        if (lines[i].trim()) break;
+    }
+    if (hdrIdx < 0) return null;
+    const tLines = [lines[hdrIdx], lines[sepIdx],
+                    ...lines.slice(sepIdx + 1).filter(l => l.includes("|"))];
+    const split  = l => l.trim().replace(/^\||\|$/g,"")
+                          .split("|").map(s => s.trim());
+    const header = split(tLines[0]);
+    const rows   = tLines.slice(2).map(split);
+    const cols   = Math.max(header.length, ...rows.map(r => r.length));
+    const pad    = (r, n) => { while (r.length < n) r.push(""); return r.slice(0, n); };
+    const th     = pad(header, cols).map(h => `<th>${escapeHtml(h)}</th>`).join("");
+    const tb     = rows.map(r =>
+        "<tr>" + pad(r, cols).map(c => `<td>${escapeHtml(c)}</td>`).join("") + "</tr>"
+    ).join("");
+    return `<table class="table-render"><thead><tr>${th}</tr></thead><tbody>${tb}</tbody></table>`;
+}
+
+function addMessage(sender, text) {
+    const div = document.createElement("div");
+    div.className = "message " + sender;
+    if (sender === "bot") {
+        const tbl = parseMarkdownTable(text);
+        div.innerHTML = tbl
+            ? `<strong>Bot:</strong> ${tbl}`
+            : `<strong>Bot:</strong> ${escapeHtml(text)}`;
+    } else {
+        div.innerHTML = `<strong>You:</strong> ${escapeHtml(text)}`;
+    }
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+/* ── Upload ── */
+async function uploadDocs() {
+    const files = fileInput.files;
+    if (!files.length) { alert("Please select documents first."); return; }
+    setReady(false);
+    setStatus("Uploading...");
+    const fd = new FormData();
+    for (const f of files) fd.append("files", f);
+    addMessage("bot", "Uploading and indexing documents...");
+    const res  = await fetch("/upload", { method: "POST", body: fd });
+    const data = await res.json();
+    if (data.job_id) {
+        addMessage("bot", data.message || "Queued...");
+        setStatus(data.message || "Queued...");
+        pollJob(data.job_id);
+    } else {
+        addMessage("bot", data.error || "Upload failed.");
+        setStatus(data.error || "");
+    }
+}
+
+const _lastMsg = {};
+async function pollJob(jobId, attempt = 0) {
+    const res  = await fetch(`/status/${jobId}`);
+    const data = await res.json();
+    if (data.error) {
+        if (data.error === "Job not found" && attempt < 3) {
+            setTimeout(() => pollJob(jobId, attempt + 1), 1000); return;
+        }
+        addMessage("bot", data.error); return;
+    }
+    if (_lastMsg[jobId] !== data.message) {
+        _lastMsg[jobId] = data.message;
+        if (data.message) { addMessage("bot", data.message); setStatus(data.message); }
+    }
+    if (data.status === "done")  { setReady(true);  return; }
+    if (data.status === "error") { setReady(false); return; }
+    setTimeout(() => pollJob(jobId, attempt), 2000);
+}
+
+/* ── Chat ── */
+async function sendMessage() {
+    const input = document.getElementById("message");
+    const text  = input.value.trim();
+    if (!text) return;
+    addMessage("user", text);
+    input.value = "";
+    const res  = await fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text })
+    });
+    const data = await res.json();
+    addMessage("bot", data.answer || "No response.");
+}
+
+/* ── Extract Tables ── */
+async function extractTables() {
+    if (extractTables._busy) return;
+    extractTables._busy = true;
+    const query = document.getElementById("message").value.trim();
+    addMessage("bot", "Extracting tables from latest PDF...");
+    try {
+        const res  = await fetch("/tables", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: query })
+        });
+        const data = await res.json();
+        addMessage("bot", data.answer || "No table output.");
+    } finally {
+        extractTables._busy = false;
+    }
+}
+
+document.getElementById("message").addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey && !sendBtn.disabled) {
+        e.preventDefault(); sendMessage();
+    }
+});
+</script>
+</body>
+</html>
